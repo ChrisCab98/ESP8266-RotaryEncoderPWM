@@ -85,10 +85,12 @@ void loop() {
 void rotate(ESPRotary& r) {
 
     char charPos[10];
+    int dimmerValue = 0;
 
     position = 25*r.getPosition();
+    dimmerValue = map(position, 0, 1000, 0, 100);
 
-    itoa(position, charPos, 10);
+    itoa(dimmerValue, charPos, 10);
 
     if (position == 0)
     {
@@ -119,8 +121,11 @@ void showDirection(ESPRotary& r) {
 void callback(char *topic, byte *payload, unsigned int length)
 {
     char msg[10];
+    char charPos[10];
+
     int i = 0;
     int newPos = 0;
+    int dimmerValue = 0;
 
     Serial.print("[MQTT Callback] Message arrived in topic: ");
     Serial.println(topic);
@@ -146,15 +151,6 @@ void callback(char *topic, byte *payload, unsigned int length)
         Serial.print("[Callback] New position of ESPRotary : ");
         Serial.println(r.getPosition());
 
-        // position = 25*r.getPosition();
-        // analogWrite(5, position);
-
-        // Serial.print("[Callback] PWM set to : ");
-        // Serial.println(position);
-
-
-
-
     }
 
     else
@@ -163,6 +159,9 @@ void callback(char *topic, byte *payload, unsigned int length)
         {
             analogWrite(5, 0);
             Serial.println("Light turned off");
+
+            MQTT.publish("stat/CuisineExterieur/power", "OFF");
+
         }
 
         else
@@ -171,6 +170,12 @@ void callback(char *topic, byte *payload, unsigned int length)
             Serial.println("Light turned on");
             Serial.print("PWM set to : ");
             Serial.println(position);
+
+            dimmerValue = map(position, 0, 1000, 0, 100);
+
+            itoa(dimmerValue, charPos, 10);
+            MQTT.publish("stat/CuisineExterieur/dimmer", charPos);
+            MQTT.publish("stat/CuisineExterieur/power", "ON");
 
 
         }
